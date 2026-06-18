@@ -1,4 +1,4 @@
-﻿/*
+/*
   app.js
   ------
   Waveify's homepage-focused controller. The app keeps the Spotify-like workflow
@@ -25,6 +25,7 @@ const WaveifyApp = (() => {
     listeningStats: WaveifyStorage.getListeningStats(),
     currentView: "home",
     currentQuery: "",
+    homeGreeting: null,
     rerender: null
   };
 
@@ -37,6 +38,7 @@ const WaveifyApp = (() => {
     migrateBoostsToWeightModel();
     state.songs = normalizeLibrary(library || []);
     state.albums = normalizeUserAlbums(typeof userAlbums !== "undefined" ? userAlbums : [], state.songs);
+    state.homeGreeting = getHomeGreeting();
     bindEvents();
 
     WaveifyPlayer.init({
@@ -158,13 +160,14 @@ const WaveifyApp = (() => {
     const recentlyPlayed = getRecentlyPlayedSongs().slice(0, 8);
     const recentlyAdded = getRecentlyAddedSongs().slice(0, 8);
     const albums = WaveifySearch.findAlbums(state.albums, "").slice(0, 10);
+    const greeting = state.homeGreeting || getHomeGreeting();
 
     elements.stage.innerHTML = `
       <section class="welcome-banner">
         <div>
-          <p class="eyebrow">Waveify</p>
-          <h1>Good listening.</h1>
-          <p>Your personal collection, organised for fast playback.</p>
+          <p class="eyebrow">${WaveifyUI.escapeHTML(greeting.eyebrow)}</p>
+          <h1>${WaveifyUI.escapeHTML(greeting.title)}</h1>
+          <p>${WaveifyUI.escapeHTML(greeting.subtitle)}</p>
         </div>
         <div class="hero-actions">
           <button class="primary-button" data-action="play-list" data-list="liked" type="button">▶ Play Liked Songs</button>
@@ -181,6 +184,13 @@ const WaveifyApp = (() => {
       ${renderSongSection("Recently Added", recentlyAdded, "Add songs in js/library.js and they appear here.")}
       ${renderAlbumSection("Albums", albums)}
     `;
+  }
+
+  function getHomeGreeting() {
+    const greetings = typeof WaveifyGreetings !== "undefined" && WaveifyGreetings.length
+      ? WaveifyGreetings
+      : [{ eyebrow: "Waveify", title: "Welcome back.", subtitle: "Ready to listen?" }];
+    return greetings[Math.floor(Math.random() * greetings.length)];
   }
 
   function renderSearch() {
@@ -435,6 +445,7 @@ const WaveifyApp = (() => {
     WaveifyStorage.saveBoosts(state.boosts);
     WaveifyPlayer.updateBoostControls();
     if (state.rerender) state.rerender();
+    WaveifyUI.toast(direction > 0 ? "Boosted" : "Boost reduced");
   }
 
   function getBoostValue(songId) {
