@@ -1,0 +1,165 @@
+﻿Waveify Music
+==============
+
+Waveify is a personal, Spotify-inspired static music streaming website built with only HTML, CSS, and JavaScript. It is designed for GitHub Pages and manual library management.
+
+Original name ideas considered
+------------------------------
+1. Waveify
+2. PulseDock
+3. BlueVibe
+4. FlowNest
+5. EchoBay
+6. TuneHarbor
+7. DriftAudio
+8. SonicLane
+9. CloudGroove
+10. RhythmVault
+
+Chosen name: Waveify. It fits the blue visual system, feels musical, and is short enough for a premium app brand.
+
+How to use
+----------
+1. Open outputs/index.html in your browser.
+2. Put MP3 files in outputs/music.
+3. Put cover artwork in outputs/images.
+4. Open outputs/js/library.js in Notepad++.
+5. Duplicate a song object and edit title, artist, album, genre, year, duration, file, and cover.
+6. Refresh the browser.
+
+Albums are optional and manual. Add them to the userAlbums list in outputs/js/library.js when you want an album card to appear.
+
+Changing the logo and favicon
+-----------------------------
+The site logo and browser tab icon both use this file:
+
+assets/logo.jpg
+
+To replace it, put your own logo in the assets folder and name it logo.jpg. Refresh the browser after replacing it.
+
+If your logo uses a different file type later, update both logo paths in index.html from assets/logo.jpg to your new image path, for example assets/logo.png.
+
+Playlist artwork placeholders
+-----------------------------
+Temporary playlist artwork has been added in images/playlists. Replace these files with your own artwork whenever you are ready:
+
+images/playlists/liked-songs.png
+images/playlists/on-repeat.png
+images/playlists/wavemix.png
+images/playlists/recently-played.png
+images/playlists/recently-added.png
+images/playlists/most-played.png
+images/playlists/all-songs.png
+
+Keep the same filenames and the app will update automatically after refresh.
+
+Example song entry
+------------------
+{
+  title: "Song Name",
+  artist: "Artist Name",
+  album: "Album Name",
+  genre: "Pop",
+  year: 2026,
+  duration: "3:20",
+  file: "music/song-name.mp3",
+  cover: "images/song-name.jpg",
+  artistImage: "images/artist-name.jpg",
+  lyrics: "lyrics/song-name.txt"
+}
+
+Example album entry
+-------------------
+{
+  title: "My Album Name",
+  artist: "Artist Name",
+  year: 2026,
+  cover: "images/my-album-cover.jpg",
+  description: "Optional short note",
+  songs: [
+    "Song Name",
+    "Another Song Name"
+  ]
+}
+
+Important: songs and albums should only be added in js/library.js. Home, Search, Liked Songs, recently played, smart shuffle, and the player are generated from that one file. Album cards are not created automatically.
+
+Folder guide
+------------
+index.html
+The app shell: sidebar, top search, main view area, bottom player, mobile nav, fullscreen player, and script links.
+
+css/style.css
+Main visual design: dark theme, blue accent, layout, cards, track rows, player bar, fullscreen player, toasts, and reusable components.
+
+css/responsive.css
+Media queries for tablets, phones, and narrow screens. The sidebar collapses into bottom navigation on mobile.
+
+css/animations.css
+Small transitions, toast entrance, audio visualiser bars, and reduced-motion support.
+
+js/library.js
+Your one editable music library file. Add every song here and nowhere else.
+
+js/storage.js
+localStorage helper for liked songs, song boosts, recently played songs, volume, and theme.
+
+js/search.js
+In-browser search for songs and your manually created albums.
+
+js/ui.js
+Shared rendering helpers for escaping text, formatting durations, cards, rows, empty states, toasts, and image fallbacks.
+
+js/player.js
+Audio playback engine: play, pause, next, previous, smart shuffle, repeat, timeline seeking, volume, fullscreen player, visualiser, lyrics loading, and keyboard shortcuts.
+
+js/app.js
+Main controller that renders the simplified Home, Search, Liked Songs, Album, and playlist views from library.js. It also controls liked songs and song boost values.
+
+music/
+Put your MP3 files here.
+
+images/
+Put album covers and artist images here.
+
+lyrics/
+Optional plain text lyrics files can go here.
+
+assets/
+Static app assets, including the default fallback cover.
+
+Current interface
+-----------------
+Waveify now focuses on three main areas: Home, Search, and Liked Songs. Home is the central hub with playlists, recently played songs, recently added songs, and your manually created albums. Liked Songs is the main saved collection.
+
+Song boosts
+-----------
+Every song starts at boost weight x1.0. Use the minus and plus buttons beside a song, or in the bottom player, to change the current song by 0.1 at a time. Values above x1.0 make a song more likely during Smart Shuffle. Values below x1.0 make it less likely without hiding it.
+
+Crossfade
+---------
+The player includes a Crossfade control in the bottom player.
+
+Options:
+Off
+Short
+Normal
+Aggressive
+
+Normal is the default. Waveify fades the next song in while the current song fades out, using a simple fixed overlap based on the selected setting. Crossfade is only used for automatic song endings; Next, Previous, and keyboard skipping change songs immediately.
+
+Keyboard shortcuts
+------------------
+Space: play/pause
+Right arrow: next song
+Left arrow: previous song
+F: favourite current song
+
+GitHub Pages
+------------
+Upload the contents of the outputs folder to your GitHub Pages repository. Keep the folder structure exactly the same so paths like music/song.mp3 and images/cover.jpg continue to work.
+
+Notes
+-----
+The included demo songs are placeholders. Replace them with your own songs and matching files. If an MP3 or image path is missing, Waveify will show a toast or fallback cover instead of crashing.
+
