@@ -107,6 +107,9 @@ localStorage helper for liked songs, song boosts, recently played songs, volume,
 js/search.js
 In-browser search for songs and your manually created albums.
 
+js/greetings.js
+Short homepage greeting lines. Add, remove, or edit entries here to change the rotating welcome message.
+
 js/ui.js
 Shared rendering helpers for escaping text, formatting durations, cards, rows, empty states, toasts, and image fallbacks.
 
