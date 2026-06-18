@@ -1,173 +1,114 @@
-Waveify Music
-==============
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waveify Music</title>
+  <link rel="icon" href="assets/logo.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="assets/logo.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=20260618-media-session-3">
+  <link rel="stylesheet" href="css/animations.css?v=20260618-media-session-3">
+  <link rel="stylesheet" href="css/responsive.css?v=20260618-media-session-3">
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <a class="brand" href="#home" data-view="home" aria-label="Waveify home">
+        <span class="brand-mark">
+          <img src="assets/logo.jpg" alt="" aria-hidden="true">
+        </span>
+        <span class="brand-copy">
+          <strong>Waveify</strong>
+          <small>Personal stream</small>
+        </span>
+      </a>
 
-Waveify is a personal, Spotify-inspired static music streaming website built with only HTML, CSS, and JavaScript. It is designed for GitHub Pages and manual library management.
+      <nav class="nav-list">
+        <button class="nav-item active" data-view="home" type="button" title="Home"><span class="nav-icon">⌂</span><span>Home</span></button>
+        <button class="nav-item" data-view="search" type="button" title="Search"><span class="nav-icon">⌕</span><span>Search</span></button>
+        <button class="nav-item" data-view="liked" type="button" title="Liked Songs"><span class="nav-icon">♡</span><span>Liked Songs</span></button>
+      </nav>
 
-Original name ideas considered
-------------------------------
-1. Waveify
-2. PulseDock
-3. BlueVibe
-4. FlowNest
-5. EchoBay
-6. TuneHarbor
-7. DriftAudio
-8. SonicLane
-9. CloudGroove
-10. RhythmVault
+      <section class="sidebar-panel">
+        <div class="panel-title">Quick Mixes</div>
+        <div class="quick-mix-list" id="quickMixesList"></div>
+      </section>
 
-Chosen name: Waveify. It fits the blue visual system, feels musical, and is short enough for a premium app brand.
+    </aside>
 
-How to use
-----------
-1. Open outputs/index.html in your browser.
-2. Put MP3 files in outputs/music.
-3. Put cover artwork in outputs/images.
-4. Open outputs/js/library.js in Notepad++.
-5. Duplicate a song object and edit title, artist, album, genre, year, duration, file, and cover.
-6. Refresh the browser.
+    <main class="main-area">
+      <header class="topbar">
+        <div class="search-shell">
+          <span aria-hidden="true">⌕</span>
+          <input id="globalSearch" type="search" placeholder="Search songs and albums..." autocomplete="off">
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-button" id="fullscreenButton" type="button" title="Fullscreen player" aria-label="Fullscreen player">⛶</button>
+        </div>
+      </header>
+      <section class="view-stage" id="viewStage" aria-live="polite"></section>
+    </main>
 
-Albums are optional and manual. Add them to the userAlbums list in outputs/js/library.js when you want an album card to appear.
+    <section class="player-bar" id="playerBar" aria-label="Music player">
+      <div class="now-playing">
+        <img id="playerCover" src="images/playlists/default-cover.png" alt="Current song cover">
+        <div class="track-copy"><strong id="playerTitle">Choose a song</strong><span id="playerArtist">Waveify is ready</span></div>
+        <button class="icon-button" id="playerFavouriteButton" type="button" title="Favourite" aria-label="Favourite song">♡</button>
+      </div>
+      <div class="player-center">
+        <div class="control-row">
+          <button class="icon-button player-boost-button" id="playerBoostDownButton" type="button" title="Reduce shuffle boost" aria-label="Reduce current song shuffle boost">−</button>
+          <button class="icon-button" id="shuffleButton" type="button" title="Shuffle" aria-label="Shuffle">⇄</button>
+          <button class="icon-button" id="previousButton" type="button" title="Previous" aria-label="Previous">‹</button>
+          <button class="play-button" id="playPauseButton" type="button" title="Play or pause" aria-label="Play or pause">▶</button>
+          <button class="icon-button" id="nextButton" type="button" title="Next" aria-label="Next">›</button>
+          <button class="icon-button" id="repeatButton" type="button" title="Repeat" aria-label="Repeat">↻</button>
+          <button class="icon-button player-boost-button" id="playerBoostUpButton" type="button" title="Increase shuffle boost" aria-label="Increase current song shuffle boost">＋</button>
+        </div>
+        <div class="timeline-row"><span id="currentTime">0:00</span><input id="progressSlider" type="range" min="0" max="100" value="0" aria-label="Song progress"><span id="totalTime">0:00</span></div>
+      </div>
+      <div class="player-tools">
+        <div class="visualiser" id="visualiser" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>
+        <label class="crossfade-control" title="Crossfade">
+          <span>Fade</span>
+          <select id="crossfadeMode" aria-label="Crossfade">
+            <option value="off">Off</option>
+            <option value="short">Short</option>
+            <option value="normal">Normal</option>
+            <option value="aggressive">Aggressive</option>
+          </select>
+        </label>
+        <span class="volume-icon" aria-hidden="true">◔</span>
+        <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.8" aria-label="Volume">
+      </div>
+    </section>
 
-Changing the logo and favicon
------------------------------
-The site logo and browser tab icon both use this file:
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="mobile-nav-item active" data-view="home" type="button">⌂<span>Home</span></button>
+      <button class="mobile-nav-item" data-view="search" type="button">⌕<span>Search</span></button>
+      <button class="mobile-nav-item" data-view="liked" type="button">♡<span>Liked</span></button>
+    </nav>
+  </div>
 
-assets/logo.jpg
+  <div class="fullscreen-player" id="fullscreenPlayer" aria-hidden="true">
+    <button class="icon-button close-fullscreen" id="closeFullscreenButton" type="button" title="Close fullscreen" aria-label="Close fullscreen">×</button>
+    <img id="fullscreenCover" src="images/playlists/default-cover.png" alt="Fullscreen cover">
+    <h2 id="fullscreenTitle">Choose a song</h2>
+    <p id="fullscreenArtist">Waveify is ready</p>
+    <div id="lyricsPanel" class="lyrics-panel"></div>
+  </div>
 
-To replace it, put your own logo in the assets folder and name it logo.jpg. Refresh the browser after replacing it.
+  <audio id="audioPlayer" preload="metadata"></audio>
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-If your logo uses a different file type later, update both logo paths in index.html from assets/logo.jpg to your new image path, for example assets/logo.png.
-
-Playlist artwork placeholders
------------------------------
-Temporary playlist artwork has been added in images/playlists. Replace these files with your own artwork whenever you are ready:
-
-images/playlists/liked-songs.png
-images/playlists/on-repeat.png
-images/playlists/wavemix.png
-images/playlists/recently-played.png
-images/playlists/recently-added.png
-images/playlists/most-played.png
-images/playlists/all-songs.png
-
-Keep the same filenames and the app will update automatically after refresh.
-
-Example song entry
-------------------
-{
-  title: "Song Name",
-  artist: "Artist Name",
-  album: "Album Name",
-  genre: "Pop",
-  year: 2026,
-  duration: "3:20",
-  file: "music/song-name.mp3",
-  cover: "images/song-name.jpg",
-  artistImage: "images/artist-name.jpg",
-  lyrics: "lyrics/song-name.txt"
-}
-
-Example album entry
--------------------
-{
-  title: "My Album Name",
-  artist: "Artist Name",
-  year: 2026,
-  cover: "images/my-album-cover.jpg",
-  description: "Optional short note",
-  songs: [
-    "Song Name",
-    "Another Song Name"
-  ]
-}
-
-Important: songs and albums should only be added in js/library.js. Home, Search, Liked Songs, recently played, smart shuffle, and the player are generated from that one file. Album cards are not created automatically.
-
-Folder guide
-------------
-index.html
-The app shell: sidebar, top search, main view area, bottom player, mobile nav, fullscreen player, and script links.
-
-css/style.css
-Main visual design: dark theme, blue accent, layout, cards, track rows, player bar, fullscreen player, toasts, and reusable components.
-
-css/responsive.css
-Media queries for tablets, phones, and narrow screens. The sidebar collapses into bottom navigation on mobile.
-
-css/animations.css
-Small transitions, toast entrance, audio visualiser bars, and reduced-motion support.
-
-js/library.js
-Your one editable music library file. Add every song here and nowhere else.
-
-js/storage.js
-localStorage helper for liked songs, song boosts, recently played songs, volume, and theme.
-
-js/search.js
-In-browser search for songs and your manually created albums.
-
-js/ui.js
-Shared rendering helpers for escaping text, formatting durations, cards, rows, empty states, toasts, and image fallbacks.
-
-js/player.js
-Audio playback engine: play, pause, next, previous, smart shuffle, repeat, timeline seeking, volume, fullscreen player, visualiser, lyrics loading, and keyboard shortcuts.
-
-js/app.js
-Main controller that renders the simplified Home, Search, Liked Songs, Album, and playlist views from library.js. It also controls liked songs and song boost values.
-
-music/
-Put your MP3 files here.
-
-images/
-Put album covers and artist images here.
-
-lyrics/
-Optional plain text lyrics files can go here.
-
-assets/
-Static app assets, including the default fallback cover.
-
-Current interface
------------------
-Waveify now focuses on three main areas: Home, Search, and Liked Songs. Home is the central hub with playlists, recently played songs, recently added songs, and your manually created albums. Liked Songs is the main saved collection.
-
-Song boosts
------------
-Every song starts at boost weight x1.0. Use the minus and plus buttons beside a song, or in the bottom player, to change the current song by 0.1 at a time. Values above x1.0 make a song more likely during Smart Shuffle. Values below x1.0 make it less likely without hiding it.
-
-Crossfade
----------
-The player includes a Crossfade control in the bottom player.
-
-Options:
-Off
-Short
-Normal
-Aggressive
-
-Normal is the default. Waveify fades the next song in while the current song fades out, using a simple fixed overlap based on the selected setting. Crossfade is only used for automatic song endings; Next, Previous, and keyboard skipping change songs immediately.
-
-Mobile lock screen controls
----------------------------
-Waveify uses the browser Media Session API when it is available. Supported mobile browsers can show the current song title, artist, album, and cover artwork from the song's cover field.
-
-The lock screen actions are play, pause, previous track, and next track. Rewind and fast-forward handlers are not registered so Waveify behaves like a music player instead of a podcast player.
-
-During mobile or background playback, Waveify keeps playback on the main audio element and refreshes Media Session position state every second. This helps the lock screen progress bar, metadata, and playback controls stay synced across long listening sessions.
-
-Keyboard shortcuts
-------------------
-Space: play/pause
-Right arrow: next song
-Left arrow: previous song
-F: favourite current song
-
-GitHub Pages
-------------
-Upload the contents of the outputs folder to your GitHub Pages repository. Keep the folder structure exactly the same so paths like music/song.mp3 and images/cover.jpg continue to work.
-
-Notes
------
-The included demo songs are placeholders. Replace them with your own songs and matching files. If an MP3 or image path is missing, Waveify will show a toast or fallback cover instead of crashing.
-
+  <script src="js/library.js?v=20260618-media-session-3"></script>
+  <script src="js/storage.js?v=20260618-media-session-3"></script>
+  <script src="js/search.js?v=20260618-media-session-3"></script>
+  <script src="js/ui.js?v=20260618-media-session-3"></script>
+  <script src="js/player.js?v=20260618-media-session-3"></script>
+  <script src="js/app.js?v=20260618-media-session-3"></script>
+</body>
+</html>
