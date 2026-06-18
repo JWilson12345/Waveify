@@ -29,12 +29,16 @@ const WaveifyPlayer = (() => {
   let activeAudio = null;
   let standbyAudio = null;
   let monitorTimer = null;
+  let mediaPositionTimer = null;
   let failedSongIds = new Set();
   let handlingFailureForSongId = null;
   let lastMediaPositionUpdate = 0;
+  let playbackRequestId = 0;
+  let pendingMediaPositionReset = null;
 
   const primaryAudio = document.getElementById("audioPlayer");
   const secondaryAudio = new Audio();
+  primaryAudio.preload = "auto";
   secondaryAudio.preload = "metadata";
 
   const elements = {
@@ -82,14 +86,15 @@ const WaveifyPlayer = (() => {
     standbyAudio.volume = 0;
 
     bindEvents();
+    setupAudioSession();
     setupMediaSession();
     updatePlayerUI();
   }
 
   function bindEvents() {
     elements.playPause.addEventListener("click", togglePlay);
-    elements.previous.addEventListener("click", playPrevious);
-    elements.next.addEventListener("click", playNext);
+    elements.previous.addEventListener("click", () => playPrevious("button-previous"));
+    elements.next.addEventListener("click", () => playNext("button-next"));
     elements.shuffle.addEventListener("click", toggleShuffle);
     elements.repeat.addEventListener("click", toggleRepeat);
     elements.boostDown.addEventListener("click", () => currentSong && callbacks.changeBoost?.(currentSong.id, -1));
@@ -102,26 +107,40 @@ const WaveifyPlayer = (() => {
     elements.closeFullscreen.addEventListener("click", closeFullscreen);
 
     [primaryAudio, secondaryAudio].forEach((audio) => {
-      audio.addEventListener("loadedmetadata", () => audio === activeAudio && updateTimeDisplay());
+      audio.addEventListener("loadedmetadata", () => handleAudioMetadataLoaded(audio));
+      audio.addEventListener("durationchange", () => handleAudioMetadataLoaded(audio));
       audio.addEventListener("timeupdate", () => audio === activeAudio && updateTimeDisplay());
       audio.addEventListener("play", () => audio === activeAudio && setPlayingState(true));
+      audio.addEventListener("playing", () => audio === activeAudio && updateMediaSessionPosition(true));
       audio.addEventListener("pause", () => audio === activeAudio && !isTransitioning && setPlayingState(false));
       audio.addEventListener("ended", () => audio === activeAudio && handleSongEnd());
       audio.addEventListener("error", () => handleAudioError(audio));
+      audio.addEventListener("stalled", () => logPlayer("audio stalled", { song: audio.waveifySongId }));
+      audio.addEventListener("waiting", () => logPlayer("audio waiting", { song: audio.waveifySongId }));
     });
 
     document.addEventListener("keydown", handleKeyboardShortcuts);
+    document.addEventListener("visibilitychange", syncMediaSessionState);
     monitorTimer = window.setInterval(monitorCrossfadeStart, 250);
+    mediaPositionTimer = window.setInterval(() => updateMediaSessionPosition(), 1000);
   }
 
   function playSong(songId) {
     const song = songMap.get(songId);
     if (!song) return;
-    activateSongImmediately(song);
+    activateSongImmediately(song, "manual-song");
   }
 
-  function activateSongImmediately(song) {
-    isTransitioning = false;
+  function activateSongImmediately(song, reason = "track-change") {
+    if (shouldUseStableAudioSession() && activeAudio !== primaryAudio) {
+      pauseAndReset(activeAudio);
+      activeAudio = primaryAudio;
+      standbyAudio = secondaryAudio;
+    }
+
+    const requestId = ++playbackRequestId;
+    logPlayer("loading track", { reason, title: song.title, file: song.file });
+    isTransitioning = true;
     pauseAndReset(standbyAudio);
     activeAudio.pause();
     activeAudio.volume = masterVolume;
@@ -129,16 +148,37 @@ const WaveifyPlayer = (() => {
     currentSong = song;
     currentIndex = songs.findIndex((candidate) => candidate.id === song.id);
     lastProgressTime = 0;
+    lastMediaPositionUpdate = 0;
+    pendingMediaPositionReset = {
+      duration: parseDuration(song.duration),
+      position: 0,
+      playbackRate: 1
+    };
     activeAudio.src = song.file;
     activeAudio.waveifySongId = song.id;
+    try {
+      activeAudio.currentTime = 0;
+    } catch (error) {
+      logPlayer("could not reset audio position before load", { title: song.title, message: error?.message });
+    }
+    activeAudio.load();
+    isTransitioning = false;
     updateMediaSessionMetadata(song);
-    updateMediaSessionPlaybackState("paused");
+    updateMediaSessionPlaybackState("playing");
+    resetMediaSessionPosition(song);
     activeAudio.play()
       .then(() => {
+        if (requestId !== playbackRequestId) return;
+        logPlayer("playback started", { title: song.title });
         failedSongIds.delete(song.id);
         callbacks.onSongPlayed?.(song.id);
+        updateMediaSessionPlaybackState("playing");
+        resetMediaSessionPosition(song);
       })
-      .catch((error) => handlePlayRejection(activeAudio, song, error));
+      .catch((error) => {
+        if (requestId !== playbackRequestId) return;
+        handlePlayRejection(activeAudio, song, error);
+      });
 
     updatePlayerUI();
     loadLyrics(song);
@@ -159,10 +199,19 @@ const WaveifyPlayer = (() => {
 
   function resumePlayback() {
     if (!currentSong && songs[0]) {
-      playSong(songs[0].id);
+      activateSongImmediately(songs[0], "resume-first-track");
       return;
     }
 
+    if (currentSong && (activeAudio.ended || !activeAudio.src)) {
+      playNext("resume-ended-track");
+      return;
+    }
+
+    logPlayer("resume requested", { title: currentSong?.title });
+    updateMediaSessionMetadata(currentSong);
+    updateMediaSessionPlaybackState("playing");
+    updateMediaSessionPosition(true);
     activeAudio.play().catch((error) => {
       if (currentSong) {
         handlePlayRejection(activeAudio, currentSong, error);
@@ -179,11 +228,11 @@ const WaveifyPlayer = (() => {
     setPlayingState(false);
   }
 
-  function playNext() {
+  function playNext(reason = "next") {
     const nextSong = getNextSong();
     if (!nextSong) return;
 
-    activateSongImmediately(nextSong);
+    activateSongImmediately(nextSong, reason);
   }
 
   function getNextSong() {
@@ -199,9 +248,9 @@ const WaveifyPlayer = (() => {
     return null;
   }
 
-  function playPrevious() {
+  function playPrevious(reason = "previous") {
     const previousSong = getPreviousSong();
-    if (previousSong) activateSongImmediately(previousSong);
+    if (previousSong) activateSongImmediately(previousSong, reason);
   }
 
   function getPreviousSong() {
@@ -243,10 +292,16 @@ const WaveifyPlayer = (() => {
 
   function monitorCrossfadeStart() {
     const crossfadeSeconds = getCrossfadeSeconds();
-    if (!currentSong || repeatEnabled || isTransitioning || activeAudio.paused || crossfadeSeconds <= 0) return;
+    if (!currentSong || repeatEnabled || isTransitioning || activeAudio.paused) return;
     if (!Number.isFinite(activeAudio.duration) || activeAudio.duration <= 0) return;
 
     const remaining = activeAudio.duration - activeAudio.currentTime;
+    if (shouldUseStableAudioSession()) {
+      if (remaining > 0 && remaining <= 0.35) playNext("stable-session-near-end");
+      return;
+    }
+
+    if (crossfadeSeconds <= 0) return;
     if (remaining > 0 && remaining <= crossfadeSeconds) {
       const nextSong = getNextSong();
       if (nextSong) startCrossfade(nextSong, Math.min(crossfadeSeconds, remaining));
@@ -255,6 +310,13 @@ const WaveifyPlayer = (() => {
 
   function startCrossfade(nextSong, duration) {
     if (isTransitioning || !nextSong || nextSong.id === currentSong?.id) return;
+    if (shouldUseStableAudioSession()) {
+      activateSongImmediately(nextSong, "stable-session-next");
+      return;
+    }
+
+    const requestId = ++playbackRequestId;
+    logPlayer("crossfade starting", { from: currentSong?.title, to: nextSong.title, duration });
     isTransitioning = true;
 
     const outgoingAudio = activeAudio;
@@ -264,11 +326,16 @@ const WaveifyPlayer = (() => {
     incomingAudio.volume = 0;
     incomingAudio.waveifySongId = nextSong.id;
     updateMediaSessionMetadata(nextSong);
+    updateMediaSessionPlaybackState("playing");
 
     incomingAudio.play().then(() => {
+      if (requestId !== playbackRequestId) return;
       failedSongIds.delete(nextSong.id);
       animateCrossfade(outgoingAudio, incomingAudio, nextSong, Math.max(0.4, duration));
-    }).catch((error) => handlePlayRejection(incomingAudio, nextSong, error));
+    }).catch((error) => {
+      if (requestId !== playbackRequestId) return;
+      handlePlayRejection(incomingAudio, nextSong, error);
+    });
   }
 
   function animateCrossfade(outgoingAudio, incomingAudio, nextSong, duration) {
@@ -295,11 +362,13 @@ const WaveifyPlayer = (() => {
       currentSong = nextSong;
       currentIndex = songs.findIndex((candidate) => candidate.id === nextSong.id);
       lastProgressTime = activeAudio.currentTime || 0;
+      lastMediaPositionUpdate = 0;
       isTransitioning = false;
       callbacks.onSongPlayed?.(nextSong.id);
       updatePlayerUI();
       loadLyrics(nextSong);
       setPlayingState(!activeAudio.paused);
+      updateMediaSessionPosition(true);
     }
 
     requestAnimationFrame(step);
@@ -307,13 +376,16 @@ const WaveifyPlayer = (() => {
 
   function handleSongEnd() {
     if (isTransitioning) return;
+    logPlayer("track ended", { title: currentSong?.title });
     if (repeatEnabled) {
       if (currentSong) callbacks.onSongRepeated?.(currentSong.id);
       activeAudio.currentTime = 0;
-      activeAudio.play();
+      updateMediaSessionPosition(true);
+      activeAudio.play().then(() => updateMediaSessionPlaybackState("playing")).catch((error) => handlePlayRejection(activeAudio, currentSong, error));
       return;
     }
-    playNext();
+    updateMediaSessionPlaybackState("playing");
+    playNext("automatic-track-end");
   }
 
   function handleAudioError(audio) {
@@ -323,6 +395,7 @@ const WaveifyPlayer = (() => {
   }
 
   function handlePlayRejection(audio, song, error) {
+    logPlayer("playback promise rejected", { title: song?.title, name: error?.name, message: error?.message });
     if (error?.name === "NotAllowedError") {
       setPlayingState(false);
       WaveifyUI.toast("Press play to start playback.");
@@ -335,6 +408,7 @@ const WaveifyPlayer = (() => {
   function handlePlaybackFailure(audio, song) {
     if (!song || handlingFailureForSongId === song.id) return;
 
+    logPlayer("playback failed", { title: song.title, file: song.file, audioRole: audio === activeAudio ? "active" : "standby" });
     handlingFailureForSongId = song.id;
     window.setTimeout(() => {
       if (handlingFailureForSongId === song.id) handlingFailureForSongId = null;
@@ -362,7 +436,7 @@ const WaveifyPlayer = (() => {
     pauseAndReset(standbyAudio);
     const nextSong = getNextSong();
     if (nextSong) {
-      activateSongImmediately(nextSong);
+      activateSongImmediately(nextSong, "skip-unplayable");
     } else {
       stopPlaybackAfterFailure();
     }
@@ -390,7 +464,7 @@ const WaveifyPlayer = (() => {
     shuffleEnabled = true;
     elements.shuffle.classList.add("active");
     const nextSong = pickSmartShuffleSong();
-    if (nextSong) activateSongImmediately(nextSong);
+    if (nextSong) activateSongImmediately(nextSong, "smart-shuffle");
   }
 
   function toggleRepeat() {
@@ -442,9 +516,20 @@ const WaveifyPlayer = (() => {
     updateMediaSessionPosition();
   }
 
+  function handleAudioMetadataLoaded(audio) {
+    if (audio !== activeAudio) return;
+    logPlayer("audio metadata ready", {
+      title: currentSong?.title,
+      duration: Number.isFinite(audio.duration) ? audio.duration : null
+    });
+    updateTimeDisplay();
+    updateMediaSessionPosition(true);
+  }
+
   function seek() {
     if (!Number.isFinite(activeAudio.duration)) return;
     activeAudio.currentTime = (Number(elements.progress.value) / 100) * activeAudio.duration;
+    updateMediaSessionPosition(true);
   }
 
   function updateVolume() {
@@ -490,12 +575,56 @@ const WaveifyPlayer = (() => {
 
     safeSetMediaSessionHandler("play", resumePlayback);
     safeSetMediaSessionHandler("pause", pausePlayback);
-    safeSetMediaSessionHandler("previoustrack", playPrevious);
-    safeSetMediaSessionHandler("nexttrack", playNext);
-    safeSetMediaSessionHandler("seekbackward", null);
-    safeSetMediaSessionHandler("seekforward", null);
+    safeSetMediaSessionHandler("previoustrack", () => playPrevious("media-session-previous"));
+    safeSetMediaSessionHandler("nexttrack", () => playNext("media-session-next"));
+    setupIOSSeekButtonFallback();
     updateMediaSessionMetadata(currentSong);
     updateMediaSessionPlaybackState("none");
+    logPlayer("media session ready", { actions: ["play", "pause", "previoustrack", "nexttrack"] });
+  }
+
+  function setupIOSSeekButtonFallback() {
+    if (!isIOSLike()) return;
+
+    safeSetMediaSessionHandler("seekbackward", () => {
+      hugeSeekBackward();
+    });
+    safeSetMediaSessionHandler("seekforward", () => {
+      hugeSeekForward();
+    });
+  }
+
+  function hugeSeekForward() {
+    logPlayer("iOS seekforward fallback using huge skip");
+    const duration = getMediaSessionDuration();
+    if (duration > 0) {
+      activeAudio.currentTime = Math.max(0, duration - 0.05);
+      updateTimeDisplay();
+      updateMediaSessionPosition(true);
+    }
+    playNext("ios-huge-seek-forward");
+  }
+
+  function hugeSeekBackward() {
+    logPlayer("iOS seekbackward fallback using huge skip");
+    if ((activeAudio.currentTime || 0) <= 3) {
+      playPrevious("ios-huge-seek-backward");
+      return;
+    }
+
+    activeAudio.currentTime = 0;
+    updateTimeDisplay();
+    updateMediaSessionPosition(true);
+  }
+
+  function setupAudioSession() {
+    if (!("audioSession" in navigator) || !navigator.audioSession) return;
+    try {
+      navigator.audioSession.type = "playback";
+      logPlayer("audio session type set", { type: navigator.audioSession.type });
+    } catch (error) {
+      console.debug("Audio Session type could not be set.", error);
+    }
   }
 
   function supportsMediaSession() {
@@ -527,6 +656,7 @@ const WaveifyPlayer = (() => {
         { src: artworkSrc, sizes: "1024x1024", type: imageMimeType(artworkSrc) }
       ]
     });
+    logPlayer("media metadata updated", { title: song?.title || "Choose a song", artwork: artworkSrc });
   }
 
   function updateMediaSessionPlaybackState(state) {
@@ -540,7 +670,8 @@ const WaveifyPlayer = (() => {
 
   function updateMediaSessionPosition(force = false) {
     if (!supportsMediaSession() || typeof navigator.mediaSession.setPositionState !== "function") return;
-    if (!currentSong || !Number.isFinite(activeAudio.duration) || activeAudio.duration <= 0) return;
+    const duration = getMediaSessionDuration();
+    if (!currentSong || duration <= 0) return;
 
     const now = Date.now();
     if (!force && now - lastMediaPositionUpdate < 1000) return;
@@ -548,13 +679,87 @@ const WaveifyPlayer = (() => {
 
     try {
       navigator.mediaSession.setPositionState({
-        duration: activeAudio.duration,
+        duration,
         playbackRate: activeAudio.playbackRate || 1,
-        position: Math.min(activeAudio.currentTime || 0, activeAudio.duration)
+        position: Math.min(activeAudio.currentTime || 0, duration)
       });
+      if (force) {
+        logPlayer("media position updated", {
+          title: currentSong.title,
+          duration,
+          position: Math.min(activeAudio.currentTime || 0, duration)
+        });
+      }
     } catch (error) {
-      console.debug("Media Session position state could not be updated.", error);
+      console.warn("Media Session position state could not be updated.", error);
     }
+  }
+
+  function resetMediaSessionPosition(song) {
+    if (!supportsMediaSession() || typeof navigator.mediaSession.setPositionState !== "function") return;
+
+    const fallbackDuration = parseDuration(song?.duration);
+    const duration = Number.isFinite(activeAudio.duration) && activeAudio.duration > 0
+      ? activeAudio.duration
+      : fallbackDuration;
+    if (!duration || duration <= 0) return;
+
+    pendingMediaPositionReset = null;
+    lastMediaPositionUpdate = Date.now();
+
+    try {
+      navigator.mediaSession.setPositionState({
+        duration,
+        playbackRate: activeAudio.playbackRate || 1,
+        position: 0
+      });
+      logPlayer("media position reset", { title: song?.title, duration, position: 0 });
+    } catch (error) {
+      console.warn("Media Session position reset could not be applied.", error);
+    }
+  }
+
+  function getMediaSessionDuration() {
+    if (pendingMediaPositionReset?.duration > 0) return pendingMediaPositionReset.duration;
+    if (Number.isFinite(activeAudio.duration) && activeAudio.duration > 0) return activeAudio.duration;
+    return parseDuration(currentSong?.duration);
+  }
+
+  function parseDuration(durationText) {
+    if (!durationText || typeof durationText !== "string") return 0;
+    const parts = durationText.split(":").map((part) => Number(part));
+    if (parts.some((part) => !Number.isFinite(part))) return 0;
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    return 0;
+  }
+
+  function syncMediaSessionState() {
+    if (!currentSong) return;
+    logPlayer("media session sync", { hidden: document.hidden, title: currentSong.title, paused: activeAudio.paused });
+    updateMediaSessionMetadata(currentSong);
+    updateMediaSessionPlaybackState(activeAudio.paused ? "paused" : "playing");
+    updateMediaSessionPosition(true);
+  }
+
+  function shouldUseStableAudioSession() {
+    if (!supportsMediaSession()) return false;
+    const coarsePointer = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+    const narrowViewport = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 900px)").matches;
+    return document.hidden || coarsePointer || narrowViewport || isMobileUserAgent();
+  }
+
+  function isMobileUserAgent() {
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+  }
+
+  function isIOSLike() {
+    return /iPhone|iPad|iPod/i.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function logPlayer(message, data = {}) {
+    console.info(`[WaveifyPlayer] ${message}`, data);
   }
 
   function mediaUrl(path) {
@@ -594,7 +799,7 @@ const WaveifyPlayer = (() => {
       event.preventDefault();
       togglePlay();
     }
-    if (event.code === "ArrowRight") playNext();
+    if (event.code === "ArrowRight") playNext("keyboard-next");
     if (event.code === "ArrowLeft") playPrevious();
     if (event.key.toLowerCase() === "f" && currentSong) callbacks.toggleFavourite?.(currentSong.id);
   }
