@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/animations.css">
-  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/style.css?v=20260618-player-center-2">
+  <link rel="stylesheet" href="css/animations.css?v=20260618-player-center-2">
+  <link rel="stylesheet" href="css/responsive.css?v=20260618-player-center-2">
 </head>
 <body>
   <div class="app-shell" id="appShell">
@@ -67,7 +67,6 @@
           <button class="icon-button" id="nextButton" type="button" title="Next" aria-label="Next">›</button>
           <button class="icon-button" id="repeatButton" type="button" title="Repeat" aria-label="Repeat">↻</button>
           <button class="icon-button player-boost-button" id="playerBoostUpButton" type="button" title="Increase shuffle boost" aria-label="Increase current song shuffle boost">＋</button>
-          <span class="boost-pill player-boost-pill" id="playerBoostPill" title="Current song shuffle weight">×1.0</span>
         </div>
         <div class="timeline-row"><span id="currentTime">0:00</span><input id="progressSlider" type="range" min="0" max="100" value="0" aria-label="Song progress"><span id="totalTime">0:00</span></div>
       </div>
@@ -105,11 +104,11 @@
   <audio id="audioPlayer" preload="metadata"></audio>
   <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 
-  <script src="js/library.js"></script>
-  <script src="js/storage.js"></script>
-  <script src="js/search.js"></script>
-  <script src="js/ui.js"></script>
-  <script src="js/player.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/library.js?v=20260618-player-center-2"></script>
+  <script src="js/storage.js?v=20260618-player-center-2"></script>
+  <script src="js/search.js?v=20260618-player-center-2"></script>
+  <script src="js/ui.js?v=20260618-player-center-2"></script>
+  <script src="js/player.js?v=20260618-player-center-2"></script>
+  <script src="js/app.js?v=20260618-player-center-2"></script>
 </body>
 </html>
