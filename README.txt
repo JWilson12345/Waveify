@@ -1,4 +1,4 @@
-﻿Waveify Music
+Waveify Music
 ==============
 
 Waveify is a personal, Spotify-inspired static music streaming website built with only HTML, CSS, and JavaScript. It is designed for GitHub Pages and manual library management.
@@ -147,6 +147,14 @@ Normal
 Aggressive
 
 Normal is the default. Waveify fades the next song in while the current song fades out, using a simple fixed overlap based on the selected setting. Crossfade is only used for automatic song endings; Next, Previous, and keyboard skipping change songs immediately.
+
+Mobile lock screen controls
+---------------------------
+Waveify uses the browser Media Session API when it is available. Supported mobile browsers can show the current song title, artist, album, and cover artwork from the song's cover field.
+
+The lock screen actions are play, pause, previous track, and next track where the browser exposes those controls. On iOS, Safari may still draw 10-second seek icons for web audio; Waveify treats those iOS seek actions as huge skips so the forward button advances to the next song and the backward button returns to the start or previous song.
+
+During mobile or background playback, Waveify keeps playback on the main audio element and refreshes Media Session position state every second. This helps the lock screen progress bar, metadata, and playback controls stay synced across long listening sessions.
 
 Keyboard shortcuts
 ------------------
