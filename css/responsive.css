@@ -1,13 +1,16 @@
-﻿@media (min-width: 1500px) {
+@media (min-width: 1500px) {
   .app-shell { grid-template-columns: var(--sidebar-width) minmax(0, 1fr); }
   .main-area { max-width: 1500px; width: 100%; }
+}
+
+@media (max-width: 1400px) {
+  .volume-icon, #volumeSlider { display: none; }
 }
 
 @media (max-width: 1180px) {
   :root { --sidebar-width: 224px; }
   .queue-drawer { right: 0.65rem; }
   .player-bar { grid-template-columns: minmax(12rem, 1fr) minmax(18rem, 1.2fr) auto; }
-  .volume-icon, #volumeSlider { display: none; }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -23,7 +26,7 @@
   .player-bar { bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom)); grid-template-columns: 1fr; gap: 0.55rem; align-items: stretch; }
   .now-playing { grid-template-columns: 3rem minmax(0, 1fr) auto; }
   .now-playing img { width: 3rem; height: 3rem; }
-  .player-center { justify-items: stretch; }
+  .player-center { position: static; width: 100%; min-width: 0; transform: none; justify-items: stretch; }
   .control-row { justify-content: center; }
   .player-tools { display: none; }
   .mobile-nav { position: fixed; right: 0; bottom: 0; left: 0; z-index: 62; display: grid; grid-template-columns: repeat(3, 1fr); min-height: var(--mobile-nav-height); padding: 0.45rem 0.45rem calc(0.45rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: rgba(8, 11, 16, 0.96); backdrop-filter: blur(18px); }
