@@ -63,8 +63,8 @@ img { display: block; max-width: 100%; }
 .chip:hover, .chip.active { border-color: rgba(79, 180, 255, 0.4); background: var(--accent-soft); color: var(--text); }
 
 .main-area { min-width: 0; padding: 1rem clamp(1rem, 2.2vw, 2rem) 2rem; }
-.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.75rem 0 1rem; background: transparent; backdrop-filter: none; }
-.search-shell { display: flex; align-items: center; gap: 0.65rem; width: min(43rem, 100%); min-height: 3rem; padding: 0 1rem; border: 1px solid rgba(79, 180, 255, 0.18); border-radius: var(--radius); background: #111722; box-shadow: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
+.topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.45rem 0 0.65rem; background: transparent; backdrop-filter: none; }
+.search-shell { display: flex; align-items: center; gap: 0.65rem; width: min(43rem, 100%); min-height: 2.65rem; padding: 0 0.9rem; border: 1px solid rgba(79, 180, 255, 0.18); border-radius: var(--radius); background: #111722; box-shadow: none; transition: border-color 160ms ease, box-shadow 160ms ease; }
 .search-shell:focus-within { border-color: rgba(79, 180, 255, 0.55); box-shadow: 0 0 0 3px rgba(79, 180, 255, 0.09); }
 .search-shell input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); }
 .search-shell input::placeholder { color: var(--subtle); }
@@ -77,11 +77,15 @@ img { display: block; max-width: 100%; }
 .view-stage { min-height: calc(100vh - var(--player-height) - 5.5rem); animation: fadeIn 260ms ease; }
 
 .welcome-banner, .playlist-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: end; padding: clamp(1.4rem, 4vw, 2.4rem); border-radius: var(--radius); background: linear-gradient(135deg, rgba(79, 180, 255, 0.18), rgba(83, 109, 254, 0.10) 55%, rgba(24, 210, 180, 0.08)), #0B111B; border: 1px solid rgba(79, 180, 255, 0.12); }
+.welcome-banner { align-items: center; gap: clamp(0.85rem, 2vw, 1.25rem); padding: clamp(0.85rem, 2.1vw, 1.35rem) clamp(1rem, 2.4vw, 1.75rem); }
 .welcome-banner h1, .playlist-heading h1, .page-heading h1 { margin: 0 0 0.45rem; font-size: clamp(2.2rem, 5vw, 4.3rem); line-height: 1; letter-spacing: 0; }
+.welcome-banner h1 { margin-bottom: 0.25rem; font-size: clamp(1.9rem, 3.35vw, 3.05rem); }
 .welcome-banner p, .playlist-heading p, .page-heading p { max-width: 64ch; margin: 0; color: var(--muted); line-height: 1.6; }
+.welcome-banner p { line-height: 1.35; }
 .eyebrow { color: var(--accent); font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
-.hero-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.35rem; }
-.primary-button, .secondary-button, .danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; min-height: 2.75rem; padding: 0 1rem; border-radius: 999px; border: 0; font-weight: 700; cursor: pointer; transition: transform 160ms ease, opacity 160ms ease, background 160ms ease; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.85rem; }
+.welcome-banner .hero-actions { margin-top: 0; }
+.primary-button, .secondary-button, .danger-button { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 2.35rem; padding: 0 0.85rem; border-radius: 999px; border: 0; font-size: 0.93rem; font-weight: 700; cursor: pointer; transition: transform 160ms ease, opacity 160ms ease, background 160ms ease; }
 .primary-button { background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: white; }
 .secondary-button { background: rgba(255, 255, 255, 0.08); color: var(--text); }
 .danger-button { background: rgba(255, 99, 125, 0.14); color: #FFB3C0; }
@@ -93,17 +97,17 @@ img { display: block; max-width: 100%; }
 .quick-tile span { display: grid; min-width: 0; padding-right: 0.75rem; }
 .quick-tile strong, .quick-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .quick-tile small { color: var(--muted); }
-.playlist-grid { display: grid; grid-template-columns: repeat(2, minmax(15rem, 1fr)); gap: 1rem; margin-top: 0.9rem; }
-.playlist-card-large { display: grid; grid-template-columns: 6.25rem minmax(0, 1fr); align-items: center; gap: 1rem; min-height: 7.5rem; padding: 0.8rem; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255, 255, 255, 0.055); cursor: pointer; transition: transform 160ms ease, background 160ms ease, border-color 160ms ease; }
+.playlist-grid { display: grid; grid-template-columns: repeat(2, minmax(15rem, 1fr)); gap: 0.75rem; margin-top: 0.55rem; }
+.playlist-card-large { display: grid; grid-template-columns: 4.7rem minmax(0, 1fr); align-items: center; gap: 0.75rem; min-height: 5.35rem; padding: 0.55rem; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255, 255, 255, 0.055); cursor: pointer; transition: transform 160ms ease, background 160ms ease, border-color 160ms ease; }
 .playlist-card-large:hover { transform: translateY(-2px); background: rgba(79, 180, 255, 0.10); border-color: rgba(79, 180, 255, 0.28); }
-.playlist-card-large img { width: 6.25rem; height: 6.25rem; border-radius: var(--radius); object-fit: cover; box-shadow: 0 12px 30px rgba(0,0,0,.28); }
-.playlist-card-large h3 { margin: 0 0 0.25rem; font-size: clamp(1.1rem, 2vw, 1.35rem); }
+.playlist-card-large img { width: 4.7rem; height: 4.7rem; border-radius: var(--radius); object-fit: cover; box-shadow: 0 10px 22px rgba(0,0,0,.24); }
+.playlist-card-large h3 { margin: 0 0 0.15rem; font-size: clamp(1rem, 1.45vw, 1.2rem); }
 .playlist-card-large p { margin: 0; color: var(--muted); }
 
-.section-block { margin-top: clamp(1.2rem, 3vw, 2rem); }
+.section-block { margin-top: clamp(0.9rem, 2.2vw, 1.45rem); }
 .section-head, .drawer-header, .playlist-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .section-head h2, .drawer-header strong, .page-heading h2 { margin: 0; }
-.section-head h2 { font-size: clamp(1.2rem, 2vw, 1.55rem); }
+.section-head h2 { font-size: clamp(1.1rem, 1.7vw, 1.38rem); }
 .section-head button { white-space: nowrap; }
 .grid { display: grid; gap: 1rem; margin-top: 0.9rem; }
 .card-grid { grid-template-columns: repeat(auto-fill, minmax(10.8rem, 1fr)); }
